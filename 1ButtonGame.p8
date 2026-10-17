@@ -23,6 +23,10 @@ target_y = 64
 pattern = {75, 38, 38, 75, 38, 38}
 pattern_index = 1
 
+-- timing settings
+hit_window = 6
+near_line_window = 18
+
 function _init()
     notes = {}
     score = 0
@@ -67,6 +71,16 @@ function spawn_note()
     })
 end
 
+-- lose one life
+function lose_life()
+    lives -= 1
+
+    if lives <= 0 then
+        lives = 0
+        game_over = true
+    end
+end
+
 function _update()
 
     -- start screen
@@ -99,24 +113,18 @@ function _update()
         end
     end
 
-    -- moves notes to the target
+    -- move notes and check misses
     for n in all(notes) do
         n.x += n.speed
 
-        -- note missed
         if not n.judged and n.x > target_x + 5 then
             n.judged = true
             n.color = 8
-            lives -= 1
+            lose_life()
 
             message = "miss!"
             message_color = 8
             message_timer = 30
-
-            if lives <= 0 then
-                lives = 0
-                game_over = true
-            end
         end
     end
 
@@ -128,6 +136,7 @@ function _update()
         local best = nil
         local best_dist = 999
 
+        -- find the nearest unjudged note
         for n in all(notes) do
             if not n.judged then
                 local dist = abs(n.x - target_x)
@@ -139,7 +148,8 @@ function _update()
             end
         end
 
-        if best and best_dist <= 6 then
+        if best and best_dist <= hit_window then
+            -- successful hit
             best.judged = true
             best.color = 11
             score += 1
@@ -147,19 +157,22 @@ function _update()
             message = "hit!"
             message_color = 11
             message_timer = 30
-        else
-            hit_color = 8
 
+        else
             -- wrong timing
-            lives -= 1
+            hit_color = 8
+            lose_life()
 
             message = "miss!"
             message_color = 8
             message_timer = 30
 
-            if lives <= 0 then
-                lives = 0
-                game_over = true
+            -- if a note is very close to the line,
+            -- mark it as already judged so it cannot
+            -- take another life when it passes the line
+            if best and best_dist <= near_line_window then
+                best.judged = true
+                best.color = 8
             end
         end
     end

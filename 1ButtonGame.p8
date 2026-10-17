@@ -10,6 +10,9 @@ game_over = false
 spawn_timer = 0
 hit_timer = 0
 hit_color = 11
+message = ""
+message_timer = 0
+message_color = 7
 
 target_x = 104
 target_y = 64
@@ -56,7 +59,11 @@ function _update()
             n.judged = true
             n.color = 8
             lives -= 1
-
+            
+            message = "miss!"
+            message_color = 8
+            message_timer = 30
+            
             if lives <= 0 then
                 lives = 0
                 game_over = true
@@ -87,14 +94,28 @@ function _update()
             best.judged = true
             best.color = 11
             score += 1
+            
+            message = "hit!"
+            message_color = 11
+            message_timer =30
         else
             hit_color = 8
+            
+            message = "miss!"
+            message_color = 8
+            message_timer = 30
         end
     end
 
     -- hit indicator timer
     if hit_timer > 0 then
         hit_timer -= 1
+    end
+    
+    if message_timer > 0 then
+       message_timer -= 1
+    else
+       message = ""
     end
 
     -- delete notes outside screen
@@ -139,6 +160,10 @@ function _draw()
     end
 
     print("x = hit", 38, 118, 6)
+    
+    if message_timer > 0 then
+       print(message, 48, 96, message_color)
+    end
 
     -- game over screen
     if game_over then

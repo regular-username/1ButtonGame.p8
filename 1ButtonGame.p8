@@ -101,10 +101,18 @@ function _update()
         else
             hit_color = 8
             
+            -- wrong timing
+            lives -= 1
+            
             message = "miss!"
             message_color = 8
             message_timer = 30
+            
+            if lives <= 0 then
+               lives = 0
+               game_over = true
         end
+    end
     end
 
     -- hit indicator timer

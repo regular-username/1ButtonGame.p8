@@ -18,6 +18,11 @@ start_screen = true
 target_x = 104
 target_y = 64
 
+-- demo rhythm pattern
+-- larger numbers = longer pauses
+pattern = {75, 38, 38, 75, 38, 38}
+pattern_index = 1
+
 function _init()
     notes = {}
     score = 0
@@ -30,6 +35,9 @@ function _init()
     message_timer = 0
     message_color = 7
     start_screen = true
+
+    pattern_index = 1
+    spawn_timer = 0
 end
 
 -- restart game
@@ -45,6 +53,8 @@ function restart_game()
     message_timer = 0
     message_color = 7
     start_screen = false
+
+    pattern_index = 1
 end
 
 function spawn_note()
@@ -61,12 +71,12 @@ function _update()
 
     -- start screen
     if start_screen then
-       if btnp(5) then
-          start_screen = false
-       end
-       return
+        if btnp(5) then
+            start_screen = false
+        end
+        return
     end
-    
+
     -- retry after game over
     if game_over then
         if btnp(5) then
@@ -75,12 +85,18 @@ function _update()
         return
     end
 
+    -- play the rhythm pattern
     spawn_timer += 1
 
-    -- creates a note periodically
-    if spawn_timer >= 75 then
+    if spawn_timer >= pattern[pattern_index] then
         spawn_note()
         spawn_timer = 0
+
+        pattern_index += 1
+
+        if pattern_index > #pattern then
+            pattern_index = 1
+        end
     end
 
     -- moves notes to the target
@@ -169,18 +185,18 @@ end
 
 function _draw()
     cls(1)
-    
+
     -- start screen
     if start_screen then
-       print("the drum game", 35, 32, 7)
-       print("one button rhytm game", 22, 46, 6)
-       
-       line(28, 60, 100, 60, 5)
-       
-       print("press x to start", 25, 76, 11)
-       print("get ready to drum!",23,92, 7)
-       
-       return
+        print("the drum game", 35, 32, 7)
+        print("one button rhytm game", 22, 46, 6)
+
+        line(28, 60, 100, 60, 5)
+
+        print("press x to start", 25, 76, 11)
+        print("get ready to drum!", 23, 92, 7)
+
+        return
     end
 
     -- score
@@ -228,7 +244,6 @@ function _draw()
         print("x = retry", 38, 73, 11)
     end
 end
-
 __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

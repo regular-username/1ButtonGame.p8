@@ -25,6 +25,23 @@ function _init()
     spawn_timer = 0
     hit_timer = 0
     hit_color = 11
+    message = ""
+    message_timer = 0
+    message_color = 7
+end
+
+-- restart game
+function restart_game()
+    notes = {}
+    score = 0
+    lives = 3
+    game_over = false
+    spawn_timer = 0
+    hit_timer = 0
+    hit_color = 11
+    message = ""
+    message_timer = 0
+    message_color = 7
 end
 
 function spawn_note()
@@ -38,7 +55,11 @@ function spawn_note()
 end
 
 function _update()
+    -- retry after game over
     if game_over then
+        if btnp(5) then
+            restart_game()
+        end
         return
     end
 
@@ -59,11 +80,11 @@ function _update()
             n.judged = true
             n.color = 8
             lives -= 1
-            
+
             message = "miss!"
             message_color = 8
             message_timer = 30
-            
+
             if lives <= 0 then
                 lives = 0
                 game_over = true
@@ -94,36 +115,36 @@ function _update()
             best.judged = true
             best.color = 11
             score += 1
-            
+
             message = "hit!"
             message_color = 11
-            message_timer =30
+            message_timer = 30
         else
             hit_color = 8
-            
+
             -- wrong timing
             lives -= 1
-            
+
             message = "miss!"
             message_color = 8
             message_timer = 30
-            
+
             if lives <= 0 then
-               lives = 0
-               game_over = true
+                lives = 0
+                game_over = true
+            end
         end
-    end
     end
 
     -- hit indicator timer
     if hit_timer > 0 then
         hit_timer -= 1
     end
-    
+
     if message_timer > 0 then
-       message_timer -= 1
+        message_timer -= 1
     else
-       message = ""
+        message = ""
     end
 
     -- delete notes outside screen
@@ -168,17 +189,18 @@ function _draw()
     end
 
     print("x = hit", 38, 118, 6)
-    
+
     if message_timer > 0 then
-       print(message, 48, 96, message_color)
+        print(message, 48, 96, message_color)
     end
 
     -- game over screen
     if game_over then
-        rectfill(20, 45, 108, 80, 1)
-        rect(20, 45, 108, 80, 8)
-        print("keep practicing!", 36, 54, 8)
-        print("score: "..score, 38, 65, 7)
+        rectfill(20, 42, 108, 86, 1)
+        rect(20, 42, 108, 86, 8)
+        print("keep practicing!", 27, 50, 8)
+        print("score: "..score, 38, 61, 7)
+        print("x = retry", 38, 73, 11)
     end
 end
 

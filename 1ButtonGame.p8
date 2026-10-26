@@ -7,13 +7,16 @@ notes = {}
 score = 0
 lives = 3
 game_over = false
-spawn_timer = 0
+
 hit_timer = 0
 hit_color = 11
+
 message = ""
 message_timer = 0
 message_color = 7
+
 start_screen = true
+
 anim_frame = 0
 anim_timer = 0
 
@@ -25,44 +28,48 @@ target_y = 64
 -- 0 = silence
 
 rhythm_patterns = {
-   {0, 0, 0, 0}, -- ----
-   {1, 0, 0, 0}, -- .---
-   {1, 0, 1, 0}, -- .-.-
-   {1, 1, 1, 1}, -- ....
+    {0, 0, 0, 0}, -- 1: ----
+    {1, 0, 0, 0}, -- 2: •---
+    {1, 0, 1, 0}, -- 3: •-•-
+    {1, 0, 0, 1}, -- 4: •--•
+    {1, 1, 1, 1}  -- 5: ••••
 }
 
 rhythm_type = 1
-rhythm_step= 1
+rhythm_step = 1
+last_rhythm_type = 0
 
---beat timing at 110 bpm
+-- timing at 110 bpm
 beat_timer = 0
-beat_lenght = 1800 / 110
+beat_length = 1800 / 110
 
--- timing settings
+-- hit timing settings
 hit_window = 6
 near_line_window = 18
 
+-- initialize game
 function _init()
     notes = {}
     score = 0
     lives = 3
     game_over = false
-    spawn_timer = 0
+
     hit_timer = 0
     hit_color = 11
+
     message = ""
     message_timer = 0
     message_color = 7
+
     start_screen = true
 
-    pattern_index = 1
-    
+    anim_frame = 0
+    anim_timer = 0
+
     rhythm_type = 1
     rhythm_step = 1
+    last_rhythm_type = 0
     beat_timer = 0
-    
-    spawn_timer = 0
-    
 end
 
 -- restart game
@@ -71,32 +78,37 @@ function restart_game()
     score = 0
     lives = 3
     game_over = false
-    spawn_timer = 0
+
     hit_timer = 0
     hit_color = 11
+
     message = ""
     message_timer = 0
     message_color = 7
-    start_screen = false
 
-    pattern_index = 1
-    
+    anim_frame = 0
+    anim_timer = 0
+
     rhythm_type = 1
     rhythm_step = 1
+    last_rhythm_type = 0
     beat_timer = 0
+
+    start_screen = false
+    music(0)
 end
 
+-- spawn a note
 function spawn_note()
     local note_speed = 1.2
-    
+
     add(notes, {
-        x = target_x - note_speed *
-        beat_lenght * 4,
+        x = target_x - note_speed * beat_length * 4,
         y = target_y,
         speed = note_speed,
         judged = false,
         color = 6
-     })
+    })
 end
 
 -- lose one life
@@ -109,14 +121,81 @@ function lose_life()
     end
 end
 
+-- choose a rhythm based on score
+function choose_rhythm()
+    local r = rnd(1)
+    local max_type = 5
+
+    if score < 5 then
+        -- beginner: mostly simple rhythms
+        max_type = 4
+
+        if r < 0.15 then
+            rhythm_type = 1
+        elseif r < 0.65 then
+            rhythm_type = 2
+        elseif r < 0.85 then
+            rhythm_type = 3
+        else
+            rhythm_type = 4
+        end
+
+    elseif score < 15 then
+        -- intermediate: balanced variety
+        if r < 0.15 then
+            rhythm_type = 1
+        elseif r < 0.38 then
+            rhythm_type = 2
+        elseif r < 0.63 then
+            rhythm_type = 3
+        elseif r < 0.83 then
+            rhythm_type = 4
+        else
+            rhythm_type = 5
+        end
+
+    else
+        -- advanced: all rhythms remain possible
+        if r < 0.15 then
+            rhythm_type = 1
+        elseif r < 0.35 then
+            rhythm_type = 2
+        elseif r < 0.60 then
+            rhythm_type = 3
+        elseif r < 0.80 then
+            rhythm_type = 4
+        else
+            rhythm_type = 5
+        end
+    end
+
+    -- avoid repeating the same rhythm twice
+    if rhythm_type == last_rhythm_type then
+        rhythm_type += 1
+
+        if rhythm_type > max_type then
+            rhythm_type = 1
+        end
+    end
+
+    last_rhythm_type = rhythm_type
+end
+
 function _update()
 
     -- start screen
     if start_screen then
         if btnp(5) then
             start_screen = false
-            music (0)
+
+            rhythm_type = 1
+            rhythm_step = 1
+            last_rhythm_type = 0
+            beat_timer = 0
+
+            music(0)
         end
+
         return
     end
 
@@ -125,79 +204,46 @@ function _update()
         if btnp(5) then
             restart_game()
         end
+
         return
     end
-    
-    --animate character
+
+    -- animate character
     if anim_frame > 0 then
-       anim_timer -= 1
-       
-       if anim_timer <= 0 then
-          if anim_frame < 3 then
-             anim_frame += 1
-             anim_timer = 5
-          else
-             anim_frame = 0
-          end
-       end
+        anim_timer -= 1
+
+        if anim_timer <= 0 then
+            if anim_frame < 3 then
+                anim_frame += 1
+                anim_timer = 5
+            else
+                anim_frame = 0
+            end
+        end
     end
 
--- play the rhythm pattern
-beat_timer += 1
+    -- rhythm clock
+    beat_timer += 1
 
-if beat_timer >= beat_lenght then
-   beat_timer -= beat_lenght
-   
--- choose a new pattern every 4 beats
-if rhythm_step == 1 then
-   local r = rnd(1)
-   
-   if score < 5 then
-      if r < 0.55 then
-      rhythm_type = 1
-   else
-      rhythm_type = 2
-   end
-   
-   elseif score < 15 then
-      if r < 0.20 then
-      rhythm_type = 1
-   elseif r < 0.45 then
-      rhythm_type = 2
-   elseif r < 0.72 then
-      rhythm_type = 3
-   else
-      rhythm_type = 4
-   end
-   
-else
-   if r < 0.10 then
-      rhythm_type = 1
-   elseif r < 0.20 then
-      rhythm_type = 2
-   elseif r < 0.45 then
-      rhythm_type = 3
-   elseif r < 0.70 then
-      rhythm_type = 4
-   else
-      rhythm_type = 5
-   end
-end
-end
+    if beat_timer >= beat_length then
+        beat_timer -= beat_length
 
---spawn a note only on active beat
-if rhythm_patterns[rhythm_type]
-[rhythm_step] == 1 then
-   spawn_note()
-end
+        -- choose a new rhythm every four beats
+        if rhythm_step == 1 then
+            choose_rhythm()
+        end
 
-rhythm_step += 1
+        -- spawn notes only on active beats
+        if rhythm_patterns[rhythm_type][rhythm_step] == 1 then
+            spawn_note()
+        end
 
-if rhythm_step > 4 then
-   rhythm_step = 1
-   end
-end
+        rhythm_step += 1
 
+        if rhythm_step > 4 then
+            rhythm_step = 1
+        end
+    end
 
     -- move notes and check misses
     for n in all(notes) do
@@ -206,6 +252,7 @@ end
         if not n.judged and n.x > target_x + 5 then
             n.judged = true
             n.color = 8
+
             lose_life()
 
             message = "miss!"
@@ -214,13 +261,13 @@ end
         end
     end
 
-    -- pressing x
+    -- pressing x plays the drum
     if btnp(5) then
-    sfx(3)
-    
+        sfx(3)
+
         hit_timer = 8
         hit_color = 11
-        
+
         anim_frame = 1
         anim_timer = 5
 
@@ -243,6 +290,7 @@ end
             -- successful hit
             best.judged = true
             best.color = 11
+
             score += 1
 
             message = "hit!"
@@ -252,15 +300,14 @@ end
         else
             -- wrong timing
             hit_color = 8
+
             lose_life()
 
             message = "miss!"
             message_color = 8
             message_timer = 30
 
-            -- if a note is very close to the line,
-            -- mark it as already judged so it cannot
-            -- take another life when it passes the line
+            -- prevent losing another life for the same note
             if best and best_dist <= near_line_window then
                 best.judged = true
                 best.color = 8
@@ -273,6 +320,7 @@ end
         hit_timer -= 1
     end
 
+    -- message timer
     if message_timer > 0 then
         message_timer -= 1
     else
@@ -303,7 +351,7 @@ function _draw()
         return
     end
 
-    -- score
+    -- title and score
     print("the drum game", 4, 4, 7)
     print("score: "..score, 82, 4, 7)
 
@@ -320,34 +368,38 @@ function _draw()
 
     -- target line
     line(0, target_y, 127, target_y, 5)
-    line(target_x, target_y - 12,
-         target_x, target_y + 12, 7)
+
+    line(
+        target_x, target_y - 12,
+        target_x, target_y + 12,
+        7
+    )
 
     -- notes
     for n in all(notes) do
         circfill(n.x, n.y, 3, n.color)
     end
-    
-    --animated character
+
+    -- animated character
     local frame = 1
-    
+
     if anim_frame > 0 then
-       frame = anim_frame
-
+        frame = anim_frame
     end
-    
-    sspr(
-       frame * 8, 0, 8, 8,
-       12, 82, 28, 28
-       )
 
-    -- show hit
+    sspr(
+        frame * 8, 0, 8, 8,
+        12, 82, 28, 28
+    )
+
+    -- hit indicator
     if hit_timer > 0 then
         circfill(110, 96, 5, hit_color)
     end
 
     print("x = hit", 38, 118, 6)
 
+    -- hit or miss message
     if message_timer > 0 then
         print(message, 48, 96, message_color)
     end
@@ -356,6 +408,7 @@ function _draw()
     if game_over then
         rectfill(20, 42, 108, 86, 1)
         rect(20, 42, 108, 86, 8)
+
         print("keep practicing!", 27, 50, 8)
         print("score: "..score, 38, 61, 7)
         print("x = retry", 38, 73, 11)

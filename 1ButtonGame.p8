@@ -148,6 +148,8 @@ function _update()
 
     -- pressing x
     if btnp(5) then
+    sfx(3)
+    
         hit_timer = 8
         hit_color = 11
         

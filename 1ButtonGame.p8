@@ -69,6 +69,7 @@ function _init()
     rhythm_type = 1
     rhythm_step = 1
     last_rhythm_type = 0
+    last_beat_was_hit = false
     beat_timer = 0
 end
 
@@ -92,6 +93,7 @@ function restart_game()
     rhythm_type = 1
     rhythm_step = 1
     last_rhythm_type = 0
+    last_beat_was_hit = false
     beat_timer = 0
 
     start_screen = false
@@ -170,12 +172,9 @@ function choose_rhythm()
     end
 
     -- avoid repeating the same rhythm twice
-    if rhythm_type == last_rhythm_type then
-        rhythm_type += 1
-
-        if rhythm_type > max_type then
-            rhythm_type = 1
-        end
+    if rhythm_type == 5 and
+    last_rhythm_type == 5 then
+       rhythm_type = 3
     end
 
     last_rhythm_type = rhythm_type
@@ -230,13 +229,21 @@ function _update()
 
         -- choose a new rhythm every four beats
         if rhythm_step == 1 then
+           if last_beat_was_hit then
+           rhythm_type = 1
+        else
             choose_rhythm()
         end
+     end
 
         -- spawn notes only on active beats
         if rhythm_patterns[rhythm_type][rhythm_step] == 1 then
             spawn_note()
         end
+        
+        last_beat_was_hit =
+           rhythm_patterns [rhythm_type]
+           [rhythm_step] == 1
 
         rhythm_step += 1
 
@@ -427,7 +434,7 @@ __sfx__
 00020000000502a0502a0502a0502a050000502304023040230402304000040000400004000040000400004000040000400004000040000400004000040000400004000040000400004000040000400004000040
 000200001f0302103021030210201e020220202203022030220301f03000030000300003000030000300003000030000300003000030000300003000030000300003000030000300003000030000300003000030
 000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000200002d3602a460283602546022360204601d3601a46017360144600f6600c6500065000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050
+000200002d3602a460283602546022360204601d3601a460170600006000060000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050
 000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __music__
 01 00020202

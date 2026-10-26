@@ -40,8 +40,10 @@ rhythm_step = 1
 last_rhythm_type = 0
 
 -- timing at 110 bpm
-beat_timer = 0
 beat_length = 1800 / 110
+
+-- music synchronization
+last_music_pat = -1
 
 -- hit timing settings
 hit_window = 6
@@ -70,7 +72,8 @@ function _init()
     rhythm_step = 1
     last_rhythm_type = 0
     last_beat_was_hit = false
-    beat_timer = 0
+
+    last_music_pat = -1
 end
 
 -- restart game
@@ -94,7 +97,8 @@ function restart_game()
     rhythm_step = 1
     last_rhythm_type = 0
     last_beat_was_hit = false
-    beat_timer = 0
+
+    last_music_pat = -1
 
     start_screen = false
     music(0)
@@ -126,12 +130,9 @@ end
 -- choose a rhythm based on score
 function choose_rhythm()
     local r = rnd(1)
-    local max_type = 5
 
     if score < 5 then
         -- beginner: mostly simple rhythms
-        max_type = 4
-
         if r < 0.15 then
             rhythm_type = 1
         elseif r < 0.65 then
@@ -174,7 +175,7 @@ function choose_rhythm()
     -- avoid repeating the same rhythm twice
     if rhythm_type == 5 and
     last_rhythm_type == 5 then
-       rhythm_type = 3
+        rhythm_type = 3
     end
 
     last_rhythm_type = rhythm_type
@@ -190,7 +191,9 @@ function _update()
             rhythm_type = 1
             rhythm_step = 1
             last_rhythm_type = 0
-            beat_timer = 0
+            last_beat_was_hit = false
+
+            last_music_pat = -1
 
             music(0)
         end
@@ -221,35 +224,37 @@ function _update()
         end
     end
 
-    -- rhythm clock
-    beat_timer += 1
+    -- synchronize rhythm with music
+    local music_pat = stat(54)
 
-    if beat_timer >= beat_length then
-        beat_timer -= beat_length
+    -- process only when the music changes pattern
+    if music_pat >= 0 and
+    music_pat <= 3 and
+    music_pat != last_music_pat then
 
-        -- choose a new rhythm every four beats
-        if rhythm_step == 1 then
-           if last_beat_was_hit then
-           rhythm_type = 1
+        last_music_pat = music_pat
+
+        -- music pattern 00 starts a new group
+        if music_pat == 0 then
+            rhythm_step = 1
+
+            if last_beat_was_hit then
+                rhythm_type = 1
+            else
+                choose_rhythm()
+            end
         else
-            choose_rhythm()
+            -- 01, 02 and 03 are beats 2, 3 and 4
+            rhythm_step = music_pat + 1
         end
-     end
 
-        -- spawn notes only on active beats
+        -- spawn notes on active beats
         if rhythm_patterns[rhythm_type][rhythm_step] == 1 then
             spawn_note()
         end
-        
+
         last_beat_was_hit =
-           rhythm_patterns [rhythm_type]
-           [rhythm_step] == 1
-
-        rhythm_step += 1
-
-        if rhythm_step > 4 then
-            rhythm_step = 1
-        end
+            rhythm_patterns[rhythm_type][rhythm_step] == 1
     end
 
     -- move notes and check misses
@@ -420,6 +425,7 @@ function _draw()
         print("score: "..score, 38, 61, 7)
         print("x = retry", 38, 73, 11)
     end
+
 end
 __gfx__
 00000000114114111111111111111111000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

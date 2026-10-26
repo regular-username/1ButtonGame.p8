@@ -20,10 +20,23 @@ anim_timer = 0
 target_x = 104
 target_y = 64
 
--- demo rhythm pattern
--- larger numbers = longer pauses
-pattern = {75, 38, 38, 75, 38, 38}
-pattern_index = 1
+-- rhythm patterns
+-- 1 = drum note
+-- 0 = silence
+
+rhythm_patterns = {
+   {0, 0, 0, 0}, -- ----
+   {1, 0, 0, 0}, -- .---
+   {1, 0, 1, 0}, -- .-.-
+   {1, 1, 1, 1}, -- ....
+}
+
+rhythm_type = 1
+rhythm_step= 1
+
+--beat timing at 110 bpm
+beat_timer = 0
+beat_lenght = 1800 / 110
 
 -- timing settings
 hit_window = 6
@@ -43,6 +56,11 @@ function _init()
     start_screen = true
 
     pattern_index = 1
+    
+    rhythm_type = 1
+    rhythm_step = 1
+    beat_timer = 0
+    
     spawn_timer = 0
     
 end
@@ -62,16 +80,23 @@ function restart_game()
     start_screen = false
 
     pattern_index = 1
+    
+    rhythm_type = 1
+    rhythm_step = 1
+    beat_timer = 0
 end
 
 function spawn_note()
+    local note_speed = 1.2
+    
     add(notes, {
-        x = 8,
+        x = target_x - note_speed *
+        beat_lenght * 4,
         y = target_y,
-        speed = 1.2,
+        speed = note_speed,
         judged = false,
         color = 6
-    })
+     })
 end
 
 -- lose one life
@@ -117,19 +142,62 @@ function _update()
        end
     end
 
-    -- play the rhythm pattern
-    spawn_timer += 1
+-- play the rhythm pattern
+beat_timer += 1
 
-    if spawn_timer >= pattern[pattern_index] then
-        spawn_note()
-        spawn_timer = 0
+if beat_timer >= beat_lenght then
+   beat_timer -= beat_lenght
+   
+-- choose a new pattern every 4 beats
+if rhythm_step == 1 then
+   local r = rnd(1)
+   
+   if score < 5 then
+      if r < 0.55 then
+      rhythm_type = 1
+   else
+      rhythm_type = 2
+   end
+   
+   elseif score < 15 then
+      if r < 0.20 then
+      rhythm_type = 1
+   elseif r < 0.45 then
+      rhythm_type = 2
+   elseif r < 0.72 then
+      rhythm_type = 3
+   else
+      rhythm_type = 4
+   end
+   
+else
+   if r < 0.10 then
+      rhythm_type = 1
+   elseif r < 0.20 then
+      rhythm_type = 2
+   elseif r < 0.45 then
+      rhythm_type = 3
+   elseif r < 0.70 then
+      rhythm_type = 4
+   else
+      rhythm_type = 5
+   end
+end
+end
 
-        pattern_index += 1
+--spawn a note only on active beat
+if rhythm_patterns[rhythm_type]
+[rhythm_step] == 1 then
+   spawn_note()
+end
 
-        if pattern_index > #pattern then
-            pattern_index = 1
-        end
-    end
+rhythm_step += 1
+
+if rhythm_step > 4 then
+   rhythm_step = 1
+   end
+end
+
 
     -- move notes and check misses
     for n in all(notes) do

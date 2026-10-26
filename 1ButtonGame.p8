@@ -44,6 +44,7 @@ function _init()
 
     pattern_index = 1
     spawn_timer = 0
+    
 end
 
 -- restart game
@@ -89,6 +90,7 @@ function _update()
     if start_screen then
         if btnp(5) then
             start_screen = false
+            music (0)
         end
         return
     end

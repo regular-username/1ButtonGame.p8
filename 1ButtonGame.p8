@@ -266,7 +266,7 @@ function _draw()
     
     sspr(
        frame * 8, 0, 8, 8,
-       12, 72, 24, 24
+       12, 82, 28, 28
        )
 
     -- show hit
